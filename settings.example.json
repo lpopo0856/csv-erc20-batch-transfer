@@ -1,0 +1,8 @@
+{
+    "rpc": "https://goerli.infura.io/v3/xxxxxx",
+    "operationAccount": "0x32B757A1E188fA260177B085a9E4A1128B29946B",
+    "operationAccountPK": "privateKey",
+    "ERC20Contract": "0x0c8fe54a1dc45801794a7998278de9dc935811b6",
+    "ERC20Decimal": 1e6,
+    "batchTransferContract": "0xe79cebdb76913ef77eabbfb120d6fcc1f0ff7d8a"
+}
