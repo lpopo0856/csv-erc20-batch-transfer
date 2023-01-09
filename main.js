@@ -1,12 +1,20 @@
 async function main() {
-    const Web3 = require('web3');
-    const csvToJson = require('csvtojson');
+    const Web3 = require('web3')
+    const CSVToJson = require('csvtojson')
+    const Winston = require('winston')
+
+    const logger = Winston.createLogger({
+        transports: [
+            new Winston.transports.Console(),
+            new Winston.transports.File({ filename: `log/${new Date()}.log` }),
+        ],
+    })
 
     const ERC20Interface = require('./erc20-abi.json')
     const batchTransferJsonInterface = require('./bt-abi.json')
     const settings = require('./settings.json')
 
-    const web3 = new Web3(settings.rpc);
+    const web3 = new Web3(settings.rpc)
 
     const op = settings.operationAccount
     // Note that if the erc20 decimal is too large, js calculation might not able to be the accurate number
@@ -14,12 +22,12 @@ async function main() {
     const erc20 = settings.ERC20Contract
     const bt = settings.batchTransferContract
 
-    web3.eth.accounts.wallet.add(settings.operationAccountPK);
-    const erc20Contract = new web3.eth.Contract(ERC20Interface, erc20);
-    const batchTransferContract = new web3.eth.Contract(batchTransferJsonInterface, bt);
+    web3.eth.accounts.wallet.add(settings.operationAccountPK)
+    const erc20Contract = new web3.eth.Contract(ERC20Interface, erc20)
+    const batchTransferContract = new web3.eth.Contract(batchTransferJsonInterface, bt)
 
-    const csvFilePath = 'data.csv';
-    const dataJson = await csvToJson().fromFile(csvFilePath);
+    const csvFilePath = 'data.csv'
+    const dataJson = await CSVToJson().fromFile(csvFilePath)
 
     const accounts = []
     const amounts = []
@@ -33,17 +41,20 @@ async function main() {
     });
 
     const sumAmountString = sumAmount.toLocaleString('fullwide', { useGrouping: false })
-    console.log("Sum amount: " + sumAmountString)
+    logger.info("Sum amount: " + sumAmountString)
 
     // approve amount
-    console.log("approving amount transfer from ERC20 token contract...")
+    logger.info("Approving ERC20 token transfer from batch transfer contract...")
     const approveGas = await erc20Contract.methods.approve(bt, sumAmountString)
         .estimateGas({ from: op })
 
     let a = new Promise((resolve, reject) => {
         erc20Contract.methods.approve(bt, sumAmountString).send({ from: op, gas: approveGas })
             .on('confirmation', function (confirmationNumber, receipt) {
-                if (confirmationNumber >= 1) {
+                if (confirmationNumber < 1) {
+                    logger.info("TxID: " + receipt.transactionHash + " Confirmation: " + confirmationNumber)
+                } else {
+                    logger.info("Tx confirmed")
                     resolve()
                 }
             })
@@ -54,20 +65,23 @@ async function main() {
 
     a.then(async () => {
         // transfer amount 
-        console.log("start calling batch transfer function...")
+        logger.info("Calling batch transfer function...")
         const batchTransferGas = await batchTransferContract.methods.batchTransfer(accounts, amounts)
-            .estimateGas({ from: op });
+            .estimateGas({ from: op })
 
         batchTransferContract.methods.batchTransfer(accounts, amounts).send({ from: op, gas: batchTransferGas })
             .on('confirmation', function (confirmationNumber, receipt) {
-                console.log("TxID: " + receipt.transactionHash + "\nConfirmation: " + confirmationNumber)
-                if (confirmationNumber >= 1) {
-                    process.exit(0);
+                if (confirmationNumber < 1) {
+                    logger.info("TxID: " + receipt.transactionHash + " Confirmation: " + confirmationNumber)
+                } else {
+                    logger.info("Tx confirmed")
+                    logger.info("Process done")
+                    process.exit(0)
                 }
             })
     }).catch((error) => {
-        console.error(error);
+        logger.error(error)
     })
 }
 
-main();
+main()
