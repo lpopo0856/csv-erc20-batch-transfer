@@ -2,11 +2,14 @@ async function main() {
     const Web3 = require('web3')
     const CSVToJson = require('csvtojson')
     const Winston = require('winston')
+    const fs = require('fs');
+
+    const now = new Date()
 
     const logger = Winston.createLogger({
         transports: [
             new Winston.transports.Console(),
-            new Winston.transports.File({ filename: `log/${new Date()}.log` }),
+            new Winston.transports.File({ filename: `log/${now}.log` }),
         ],
     })
 
@@ -27,6 +30,12 @@ async function main() {
     const batchTransferContract = new web3.eth.Contract(batchTransferJsonInterface, bt)
 
     const csvFilePath = 'data.csv'
+
+    logger.info(`Copying data.csv to log/${now}.csv`);
+    fs.copyFile('data.csv', `log/${now}.csv`, (err) => {
+        if (err) throw err;
+    });
+
     const dataJson = await CSVToJson().fromFile(csvFilePath)
 
     const accounts = []
