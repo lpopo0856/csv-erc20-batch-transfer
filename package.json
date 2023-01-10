@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cac": "^6.7.14",
     "csvtojson": "^2.0.10",
     "web3": "^1.8.1",
     "winston": "^3.8.2"

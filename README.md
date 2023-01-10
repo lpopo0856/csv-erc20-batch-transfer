@@ -12,5 +12,21 @@ npm install
 ### Start
 Add the `settings.json` first and modify the `data.csv`
 ```shell
-npm start
+npm start -- withdraw
+```
+
+#### Dry run
+
+Use --dry to check the volume
+
+```
+npm start -- withdraw --dry true
+```
+
+#### Approve
+
+Use --approve to run approve to self
+
+```
+npm start -- withdraw --approve true
 ```
